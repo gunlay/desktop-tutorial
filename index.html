@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端应用</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="content">
+        <!-- 主要内容区域 -->
+        <div id="home" class="tab-content active">
+            <!-- 轮播图部分 -->
+            <div class="carousel">
+                <div class="carousel-container">
+                    <div class="carousel-slide">
+                        <img src="https://picsum.photos/800/400?random=1" alt="轮播图1">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://picsum.photos/800/400?random=2" alt="轮播图2">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://picsum.photos/800/400?random=3" alt="轮播图3">
+                    </div>
+                </div>
+                <div class="carousel-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+            
+            <!-- 文案展示部分 -->
+            <div class="content-section">
+                <h2>欢迎使用</h2>
+                <p>这是一段精心编写的文案，展示我们的产品特色和主要功能。让用户可以快速了解产品的核心价值。</p>
+            </div>
+
+            <!-- 语音输入按钮 -->
+            <button class="voice-input-btn">
+                <i class="icon">🎤</i>
+                <span>语音输入</span>
+            </button>
+        </div>
+        <div id="discover" class="tab-content">
+            <div class="post-list">
+                <!-- 帖子1 -->
+                <div class="post-item">
+                    <div class="post-header">
+                        <img class="avatar" src="https://picsum.photos/40/40?random=1" alt="用户头像">
+                        <div class="post-info">
+                            <div class="username">张小明</div>
+                            <div class="post-time">2小时前</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        今天去尝试了一家新开的咖啡店，环境不错，咖啡也很香醇。分享一下我的体验：首先，店面装修很有格调，充满了北欧简约风格...
+                    </div>
+                    <div class="post-replies">
+                        <div class="reply-item">
+                            <span class="reply-username">李华：</span>
+                            <span class="reply-content">看起来不错，下次我也去试试！</span>
+                        </div>
+                        <div class="reply-item">
+                            <span class="reply-username">小红：</span>
+                            <span class="reply-content">请问具体位置在哪里呢？</span>
+                        </div>
+                        <div class="reply-item">
+                            <span class="reply-username">王五：</span>
+                            <span class="reply-content">价格怎么样啊？</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帖子2 -->
+                <div class="post-item">
+                    <div class="post-header">
+                        <img class="avatar" src="https://picsum.photos/40/40?random=2" alt="用户头像">
+                        <div class="post-info">
+                            <div class="username">李小芳</div>
+                            <div class="post-time">5小时前</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        分享一个我最近学到的摄影技巧，在拍摄人像时如何更好地利用自然光源，让照片更有质感...
+                    </div>
+                    <div class="post-replies">
+                        <div class="reply-item">
+                            <span class="reply-username">小明：</span>
+                            <span class="reply-content">学到了，感谢分享！</span>
+                        </div>
+                        <div class="reply-item">
+                            <span class="reply-username">大卫：</span>
+                            <span class="reply-content">能分享一些实际拍摄的照片吗？</span>
+                        </div>
+                        <div class="reply-item">
+                            <span class="reply-username">小雨：</span>
+                            <span class="reply-content">这个技巧太实用了！</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帖子3 -->
+                <div class="post-item">
+                    <div class="post-header">
+                        <img class="avatar" src="https://picsum.photos/40/40?random=3" alt="用户头像">
+                        <div class="post-info">
+                            <div class="username">王小军</div>
+                            <div class="post-time">8小时前</div>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        最近在尝试一些新的健身方法，特别是一些低强度的训练方式，意外发现效果特别好...
+                    </div>
+                    <div class="post-replies">
+                        <div class="reply-item">
+                            <span class="reply-username">健身达人：</span>
+                            <span class="reply-content">不错的见解，我也有类似的体会。</span>
+                        </div>
+                        <div class="reply-item">
+                            <span class="reply-username">新手小白：</span>
+                            <span class="reply-content">可以详细说说具体的训练方法吗？</span>
+                        </div>
+                        <div class="reply-item">
+                            <span class="reply-username">运动爱好者：</span>
+                            <span class="reply-content">mark一下，回头试试！</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="record" class="tab-content">
+            <div class="calendar">
+                <div class="calendar-header">
+                    <button class="calendar-btn" id="prevMonth">
+                        <i class="icon">◀</i>
+                    </button>
+                    <h2 class="calendar-title">2024年3月</h2>
+                    <button class="calendar-btn" id="nextMonth">
+                        <i class="icon">▶</i>
+                    </button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div>日</div>
+                    <div>一</div>
+                    <div>二</div>
+                    <div>三</div>
+                    <div>四</div>
+                    <div>五</div>
+                    <div>六</div>
+                </div>
+                <div class="calendar-days" id="calendarDays">
+                    <!-- 日历格子由 JavaScript 动态生成 -->
+                </div>
+            </div>
+        </div>
+        <div id="profile" class="tab-content">
+            <!-- 用户信息卡片 -->
+            <div class="profile-header">
+                <div class="profile-info">
+                    <img class="profile-avatar" src="https://picsum.photos/80/80?random=1" alt="头像">
+                    <div class="profile-detail">
+                        <h2 class="profile-name">张小明</h2>
+                        <div class="profile-id">微信号：zhangxm123</div>
+                    </div>
+                </div>
+                <div class="profile-qr">
+                    <i class="icon">🔍</i>
+                </div>
+            </div>
+
+            <!-- 功能列表 -->
+            <div class="profile-section">
+                <div class="profile-item">
+                    <i class="icon">💳</i>
+                    <span>支付</span>
+                    <i class="arrow">▶</i>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <div class="profile-item">
+                    <i class="icon">⭐️</i>
+                    <span>收藏</span>
+                    <i class="arrow">▶</i>
+                </div>
+                <div class="profile-item">
+                    <i class="icon">🖼️</i>
+                    <span>朋友圈</span>
+                    <i class="arrow">▶</i>
+                </div>
+                <div class="profile-item">
+                    <i class="icon">🎮</i>
+                    <span>游戏</span>
+                    <i class="arrow">▶</i>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <div class="profile-item">
+                    <i class="icon">⚙️</i>
+                    <span>设置</span>
+                    <i class="arrow">▶</i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="tab-bar">
+        <div class="tab-item active" data-tab="home">
+            <i class="icon">🏠</i>
+            <span>首页</span>
+        </div>
+        <div class="tab-item" data-tab="discover">
+            <i class="icon">🔍</i>
+            <span>发现</span>
+        </div>
+        <div class="tab-item" data-tab="record">
+            <i class="icon">📝</i>
+            <span>记录</span>
+        </div>
+        <div class="tab-item" data-tab="profile">
+            <i class="icon">👤</i>
+            <span>我的</span>
+        </div>
+    </nav>
+
+    <script src="app.js"></script>
+</body>
+</html> 
