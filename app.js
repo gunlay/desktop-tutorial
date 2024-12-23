@@ -132,18 +132,13 @@ function initCarousel() {
             
             try {
                 // 修改为线上地址
-                const response = await fetch('https://api.deepseek.com/v1/chat', {
+                const response = await fetch('http://your_actual_server:5001/api/chat', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer sk-276d5267971644bca803a9130d6db1ac`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        messages: [
-                            {"role": "system", "content": "你是一个友好的助手，请用简短的语言回答用户的问题。"},
-                            {"role": "user", "content": userMessage}
-                        ],
-                        model: "deepseek-chat"
+                        message: userMessage
                     })
                 });
                 
@@ -154,7 +149,7 @@ function initCarousel() {
                 const data = await response.json();
                 
                 // 添加AI回复消息
-                addMessage(data.choices[0].message.content, 'bot');
+                addMessage(data.reply, 'bot');
                 
             } catch (error) {
                 console.error('Error:', error);

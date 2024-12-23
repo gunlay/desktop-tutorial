@@ -42,8 +42,5 @@ def chat():
         })
         
     except Exception as e:
-        print(f"发生错误: {str(e)}")  # 详细的错误日志
-        return jsonify({'error': '服务器错误'}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001) 
+        print(f"发生错误: {str(e)}")
+        return jsonify({'error': '服务器错误'}), 500 
