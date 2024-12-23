@@ -120,23 +120,51 @@ function initCarousel() {
         "我来帮您解决这个问题"
     ];
 
-    textInput.addEventListener('keypress', (e) => {
+    textInput.addEventListener('keypress', async (e) => {
         if (e.key === 'Enter' && textInput.value.trim()) {
-            // 添加用户消息
-            addMessage(textInput.value, 'user');
+            const userMessage = textInput.value.trim();
             
-            // 模拟自动回复
-            setTimeout(() => {
-                const randomReply = autoReplies[Math.floor(Math.random() * autoReplies.length)];
-                addMessage(randomReply, 'bot');
-            }, 1000);
-
+            // 添加用户消息
+            addMessage(userMessage, 'user');
+            
             // 清空输入框
             textInput.value = '';
+            
+            try {
+                // 调用API获取AI回复
+                const response = await fetch('http://localhost:5000/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: userMessage
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                
+                const data = await response.json();
+                
+                // 添加AI回复消息
+                addMessage(data.reply, 'bot');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('抱歉，发生了一些错误，请稍后重试。', 'bot');
+            }
         }
     });
 
     function addMessage(text, type) {
+        // 当添加第一条消息时，隐藏欢迎文案
+        const welcomeSection = document.querySelector('.content-section');
+        if (welcomeSection && welcomeSection.style.display !== 'none') {
+            welcomeSection.style.display = 'none';
+        }
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}`;
         messageDiv.textContent = text;
