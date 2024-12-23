@@ -131,8 +131,8 @@ function initCarousel() {
             textInput.value = '';
             
             try {
-                // 使用 Vercel 部署后的地址
-                const response = await fetch('https://desktop-tutorial-a3ph2m90n-gunlays-projects.vercel.app/api/chat', {
+                // 使用相对路径
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -143,7 +143,9 @@ function initCarousel() {
                 });
                 
                 if (!response.ok) {
-                    throw new Error('网络请求失败');
+                    const errorData = await response.json();
+                    console.error('API Error:', errorData);
+                    throw new Error(errorData.error || '网络请求失败');
                 }
                 
                 const data = await response.json();
@@ -152,8 +154,8 @@ function initCarousel() {
                 addMessage(data.reply, 'bot');
                 
             } catch (error) {
-                console.error('Error:', error);
-                addMessage('抱歉，发生了一些错误，请稍后重试。', 'bot');
+                console.error('Error details:', error);
+                addMessage(`错误信息: ${error.message}`, 'bot');
             }
         }
     });

@@ -18,19 +18,25 @@ def chat():
         if not user_message:
             return jsonify({'error': '消息不能为空'}), 400
             
-        response = openai.ChatCompletion.create(
-            model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": "你是一个友好的助手，请用简短的语言回答用户的问题。"},
-                {"role": "user", "content": user_message}
-            ]
-        )
-        
-        ai_reply = response.choices[0].message.content
-        return jsonify({'reply': ai_reply})
-        
+        try:
+            response = openai.ChatCompletion.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": "你是一个友好的助手，请用简短的语言回答用户的问题。"},
+                    {"role": "user", "content": user_message}
+                ]
+            )
+            
+            ai_reply = response.choices[0].message.content
+            return jsonify({'reply': ai_reply})
+            
+        except Exception as e:
+            print(f"OpenAI API Error: {str(e)}")
+            return jsonify({'error': f'AI服务错误: {str(e)}'}), 500
+            
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Server Error: {str(e)}")
+        return jsonify({'error': f'服务器错误: {str(e)}'}), 500
 
 @app.route('/')
 def home():
