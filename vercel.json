@@ -8,6 +8,11 @@
   ],
   "routes": [
     {
+      "src": "/api/chat",
+      "methods": ["POST"],
+      "dest": "server.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "server.py"
     }

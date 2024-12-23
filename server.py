@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
-import os
 
 app = Flask(__name__)
-CORS(app)  # 启用跨域支持
+CORS(app)
 
 # 初始化OpenAI客户端
 client = OpenAI(
@@ -21,7 +20,6 @@ def chat():
         if not user_message:
             return jsonify({'error': '消息不能为空'}), 400
             
-        # 调用AI接口
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
@@ -31,20 +29,15 @@ def chat():
             stream=False
         )
         
-        # 获取AI回复
         ai_reply = response.choices[0].message.content
-        
-        return jsonify({
-            'reply': ai_reply
-        })
+        return jsonify({'reply': ai_reply})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Vercel 需要的健康检查路由
 @app.route('/')
 def home():
     return "Server is running"
 
-# Vercel 使用 WSGI 应用
-app.debug = False
+# 为 Vercel 提供入口点
+app = app.wsgi_app
