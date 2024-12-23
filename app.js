@@ -132,7 +132,7 @@ function initCarousel() {
             
             try {
                 // 使用 Vercel 部署后的地址
-                const response = await fetch('https://desktop-tutorial-theta-ten.vercel.app/api/chat', {
+                const response = await fetch('https://desktop-tutorial-a3ph2m90n-gunlays-projects.vercel.app/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
