@@ -7,7 +7,84 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- 保持原有内容不变 -->
+    <div class="content">
+        <!-- 主要内容区域 -->
+        <div id="home" class="tab-content active">
+            <!-- 轮播图部分 -->
+            <div class="carousel">
+                <div class="carousel-container">
+                    <div class="carousel-slide">
+                        <img src="https://picsum.photos/800/400?random=1" alt="轮播图1">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://picsum.photos/800/400?random=2" alt="轮播图2">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="https://picsum.photos/800/400?random=3" alt="轮播图3">
+                    </div>
+                </div>
+                <div class="carousel-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+
+            <!-- 添加对话区域 -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- 对话内容会动态添加到这里 -->
+                </div>
+            </div>
+
+            <!-- 文案展示部分 -->
+            <div class="content-section">
+                <h2>欢迎使用</h2>
+                <p>这是一段精心编写的文案，展示我们的产品特色和主要功能。让用户可以快速了解产品的核心价值。</p>
+            </div>
+
+            <!-- 输入框和语音输入按钮 -->
+            <div class="input-section">
+                <input type="text" class="text-input" placeholder="请输入内容...">
+                <button class="voice-input-btn">
+                    <i class="icon">🎤</i>
+                    <span>语音输入</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 其他 tab 内容 -->
+        <div id="discover" class="tab-content">
+            <!-- 发现页内容 -->
+        </div>
+        <div id="record" class="tab-content">
+            <!-- 记录页内容 -->
+        </div>
+        <div id="profile" class="tab-content">
+            <!-- 我的页内容 -->
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="tab-bar">
+        <div class="tab-item active" data-tab="home">
+            <i class="icon">🏠</i>
+            <span>首页</span>
+        </div>
+        <div class="tab-item" data-tab="discover">
+            <i class="icon">🔍</i>
+            <span>发现</span>
+        </div>
+        <div class="tab-item" data-tab="record">
+            <i class="icon">📝</i>
+            <span>记录</span>
+        </div>
+        <div class="tab-item" data-tab="profile">
+            <i class="icon">👤</i>
+            <span>我的</span>
+        </div>
+    </nav>
+
     <script src="app.js"></script>
 </body>
 </html> 
