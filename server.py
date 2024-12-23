@@ -19,11 +19,9 @@ def chat():
         user_message = data.get('message')
         
         if not user_message:
-            print("错误：消息为空")
             return jsonify({'error': '消息不能为空'}), 400
             
         # 调用AI接口
-        print(f"正在处理用户消息: {user_message}")
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
@@ -35,12 +33,18 @@ def chat():
         
         # 获取AI回复
         ai_reply = response.choices[0].message.content
-        print(f"AI回复: {ai_reply}")
         
         return jsonify({
             'reply': ai_reply
         })
         
     except Exception as e:
-        print(f"发生错误: {str(e)}")
-        return jsonify({'error': '服务器错误'}), 500 
+        return jsonify({'error': str(e)}), 500
+
+# Vercel 需要的健康检查路由
+@app.route('/')
+def home():
+    return "Server is running"
+
+# Vercel 使用 WSGI 应用
+app.debug = False

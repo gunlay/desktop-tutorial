@@ -131,8 +131,8 @@ function initCarousel() {
             textInput.value = '';
             
             try {
-                // 修改为线上地址
-                const response = await fetch('http://your_actual_server:5001/api/chat', {
+                // 使用 Vercel 部署后的地址
+                const response = await fetch('https://desktop-tutorial-theta-ten.vercel.app/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
