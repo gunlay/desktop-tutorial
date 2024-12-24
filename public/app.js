@@ -52,60 +52,183 @@ function initCarousel() {
     const voiceBtn = document.querySelector('.voice-input-btn');
     const voiceIcon = voiceBtn.querySelector('.icon');
     const voiceText = voiceBtn.querySelector('span');
-    let mediaRecorder;
+    const waveContainer = document.querySelector('.voice-wave-container');
+    const wavesDiv = document.querySelector('.voice-waves');
+    const cancelTip = document.querySelector('.cancel-tip');
+    let recognition = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let analyser = null;
     let isRecording = false;
-    let audioChunks = [];
+    let longPressTimer = null;
+    let startY = 0;
 
-    voiceBtn.addEventListener('click', async () => {
-        if (!isRecording) {
-            try {
-                // 请求麦克风权限并开始录音
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
+    // 创建波形条
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'voice-wave-bar';
+        wavesDiv.appendChild(bar);
+    }
 
-                mediaRecorder.onstop = () => {
-                    // 录音结束后的处理
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    audioChunks = [];
-                    
-                    // 创建音频URL
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    
-                    // 添加语音消息
-                    addVoiceMessage(audioUrl, audioBlob.size);
-                    
-                    // 模拟语音转文字（实际项目中需要调用语音识别API）
-                    setTimeout(() => {
-                        const mockText = "这是一段语音转换的文字";
-                        addVoiceTranscript(mockText);
-                    }, 1000);
-                };
+    // 初始化音频上下文
+    function initAudioContext() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+    }
 
-                // 开始录音
-                mediaRecorder.start();
-                isRecording = true;
-                voiceIcon.textContent = '⏺';  // 改变图标为录音中
-                voiceText.textContent = '点击结束';
-                voiceBtn.style.backgroundColor = '#ff3b30';  // 改变按钮颜色为红色
+    // 更新波形显示
+    function updateWaveform() {
+        if (!isRecording) return;
 
-            } catch (err) {
-                console.error('无法访问麦克风：', err);
-                alert('无法访问麦克风，请确保已授予麦克风权限。');
-            }
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(dataArray);
+        const bars = wavesDiv.children;
+        
+        for (let i = 0; i < bars.length; i++) {
+            const value = dataArray[i] || 0;
+            const height = Math.max(3, value / 2);
+            bars[i].style.height = `${height}px`;
+        }
+
+        requestAnimationFrame(updateWaveform);
+    }
+
+    // 开始录音
+    async function startRecording() {
+        try {
+            if (!audioContext) initAudioContext();
+            
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+            
+            recognition.start();
+            isRecording = true;
+            waveContainer.classList.add('active');
+            voiceIcon.textContent = '⏺';
+            voiceText.textContent = '松开结束';
+            voiceBtn.style.backgroundColor = '#ff3b30';
+            
+            updateWaveform();
+        } catch (err) {
+            console.error('录音启动失败:', err);
+            addMessage('录音启动失败，请重试。', 'bot');
+        }
+    }
+
+    // 停止录音
+    function stopRecording() {
+        if (!isRecording) return;
+        
+        recognition.stop();
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+        waveContainer.classList.remove('active');
+        cancelTip.classList.remove('active');
+        isRecording = false;
+        voiceIcon.textContent = '🎤';
+        voiceText.textContent = '语音输入';
+        voiceBtn.style.backgroundColor = '#007aff';
+    }
+
+    // 取消录音
+    function cancelRecording() {
+        recognition.abort();
+        stopRecording();
+        addMessage('已取消录音', 'bot');
+    }
+
+    // 长按开始事件
+    voiceBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startY = e.touches[0].clientY;
+        longPressTimer = setTimeout(() => {
+            startRecording();
+        }, 500); // 500ms 长按触发
+    });
+
+    // 触摸移动事件
+    voiceBtn.addEventListener('touchmove', (e) => {
+        if (!isRecording) return;
+        
+        const moveY = e.touches[0].clientY;
+        const diff = startY - moveY;
+        
+        // 上滑超过50像素显示取消提示
+        if (diff > 50) {
+            cancelTip.classList.add('active');
         } else {
-            // 停止录音
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            isRecording = false;
-            voiceIcon.textContent = '🎤';  // 恢复原始图标
-            voiceText.textContent = '语音输入';
-            voiceBtn.style.backgroundColor = '#007aff';  // 恢复原始颜色
+            cancelTip.classList.remove('active');
         }
     });
+
+    // 触摸结束事件
+    voiceBtn.addEventListener('touchend', (e) => {
+        clearTimeout(longPressTimer);
+        
+        if (!isRecording) return;
+        
+        const endY = e.changedTouches[0].clientY;
+        const diff = startY - endY;
+        
+        if (diff > 50) {
+            cancelRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    // 触摸取消事件
+    voiceBtn.addEventListener('touchcancel', () => {
+        clearTimeout(longPressTimer);
+        if (isRecording) {
+            cancelRecording();
+        }
+    });
+
+    // 检查浏览器是否支持语音识别
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'zh-CN';  // 设置语音识别为中文
+
+        // 语音识别结果处理
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            textInput.value = text;  // 将识别结果填入输入框
+            
+            // 自动发送识别结果
+            const enterEvent = new KeyboardEvent('keypress', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true
+            });
+            textInput.dispatchEvent(enterEvent);
+        };
+
+        // 语音识别结束处理
+        recognition.onend = () => {
+            isRecording = false;
+            voiceIcon.textContent = '🎤';
+            voiceText.textContent = '语音输入';
+            voiceBtn.style.backgroundColor = '#007aff';
+        };
+
+        // 语音识别错误处理
+        recognition.onerror = (event) => {
+            console.error('语音识别错误:', event.error);
+            isRecording = false;
+            voiceIcon.textContent = '🎤';
+            voiceText.textContent = '语音输入';
+            voiceBtn.style.backgroundColor = '#007aff';
+            addMessage('语音识别失败，请重试。', 'bot');
+        };
+    }
 
     // 添加文本输入处理
     const textInput = document.querySelector('.text-input');
@@ -179,7 +302,7 @@ function initCarousel() {
     // 在 initCarousel 函数中添加塔罗牌按钮事件处理
     const tarotBtn = document.querySelector('.tarot-btn');
     tarotBtn.addEventListener('click', () => {
-        // 替换为你的 Coze 应用链接
+        // 替换为你��� Coze 应用链接
         const cozeAppUrl = 'https://www.coze.cn/space/7382101453072302143/ui-builder-preview/7451807835614199827/mobile/home';  // 替换 YOUR_BOT_ID
         // 在新窗口打开 Coze 应用
         window.open(cozeAppUrl, '_blank');
@@ -245,7 +368,7 @@ function initCalendar() {
     }
 
     function showDayDetail(day) {
-        alert(`查看 ${currentYear}年${currentMonth + 1}月${day}日 的详细记录`);
+        alert(`查看 ${currentYear}年${currentMonth + 1}月${day}日 的详细记���`);
         // 这里可以实现查看详情的具体逻辑
     }
 
