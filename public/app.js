@@ -51,82 +51,73 @@ function initVoiceInput() {
     const textInput = document.querySelector('.text-input');
     
     let recognition = null;
-    let audioContext = null;
-    let mediaStream = null;
-    let analyser = null;
     let isRecording = false;
 
-    // 创建波形条
-    for (let i = 0; i < 20; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'voice-wave-bar';
-        wavesDiv.appendChild(bar);
-    }
-
-    // 初始化音频上下文
-    function initAudioContext() {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 64;
-    }
-
-    // 更新波形显示
-    function updateWaveform() {
-        if (!isRecording) return;
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(dataArray);
-        const bars = wavesDiv.children;
-        
-        for (let i = 0; i < bars.length; i++) {
-            const value = dataArray[i] || 0;
-            const height = Math.max(3, value / 2);
-            bars[i].style.height = `${height}px`;
-        }
-        requestAnimationFrame(updateWaveform);
-    }
-
-    // 检查浏览器是否支持语音识别
+    // 检查是否支持原生语音识别
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.continuous = true;
+        recognition.interimResults = true;
         recognition.lang = 'zh-CN';
+    } else if ('SpeechRecognition' in window) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'zh-CN';
+    }
 
+    // 如果支持语音识别，设置事件处理
+    if (recognition) {
         recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript;
-            handleUserInput(text);
+            const result = event.results[event.results.length - 1];
+            if (result.isFinal) {
+                const text = result[0].transcript;
+                handleUserInput(text);
+                stopRecording();
+            }
         };
 
         recognition.onend = () => {
-            stopRecording();
+            if (isRecording) {
+                startRecording();
+            }
         };
 
         recognition.onerror = (event) => {
             console.error('语音识别错误:', event.error);
-            stopRecording();
-            addMessage('语音识别失败，请重试。', 'bot');
+            if (event.error === 'no-speech') {
+                if (isRecording) {
+                    startRecording();
+                }
+            } else {
+                stopRecording();
+                addMessage('语音识别失败，请重试。', 'bot');
+            }
         };
     }
 
     // 开始录音
     async function startRecording() {
         try {
-            if (!audioContext) initAudioContext();
-            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const source = audioContext.createMediaStreamSource(mediaStream);
-            source.connect(analyser);
-            
+            if (!recognition) {
+                // 如果不支持 Web Speech API，尝试调用系统语音输入
+                if (isMobile()) {
+                    startMobileVoiceInput();
+                    return;
+                }
+                throw new Error('设备不支持语音识别');
+            }
+
             recognition.start();
             isRecording = true;
             waveContainer.classList.add('active');
             voiceIcon.textContent = '⏺';
             voiceText.textContent = '录音中';
             voiceBtn.style.backgroundColor = '#ff3b30';
-            
-            updateWaveform();
         } catch (err) {
             console.error('录音启动失败:', err);
             addMessage('录音启动失败，请重试。', 'bot');
+            stopRecording();
         }
     }
 
@@ -134,25 +125,68 @@ function initVoiceInput() {
     function stopRecording() {
         if (!isRecording) return;
         
-        recognition.stop();
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+        if (recognition) {
+            recognition.stop();
         }
         waveContainer.classList.remove('active');
         cancelTip.classList.remove('active');
-        isRecording = false;
         voiceIcon.textContent = '🎤';
         voiceText.textContent = '语音输入';
         voiceBtn.style.backgroundColor = '#007aff';
     }
 
-    // 语音按钮点击事件
-    voiceBtn.addEventListener('click', () => {
-        if (!recognition) {
-            addMessage('您的浏览器不支持语音识别功能。', 'bot');
-            return;
+    // 检查是否为移动设备
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // 启动移动设备原生语音输入
+    function startMobileVoiceInput() {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.style.position = 'absolute';
+        input.style.opacity = '0';
+        input.style.height = '1px';
+        input.style.width = '1px';
+        input.style.top = '-100px';
+        document.body.appendChild(input);
+
+        input.focus();
+        
+        // 触发移动设备的语音输入
+        if (typeof window.webkit !== 'undefined' && 
+            window.webkit.messageHandlers && 
+            window.webkit.messageHandlers.keyboard) {
+            // iOS 设备
+            window.webkit.messageHandlers.keyboard.postMessage('showVoice');
+        } else if (window.chrome && window.chrome.webview) {
+            // Android 设备
+            window.chrome.webview.postMessage('showVoice');
+        } else {
+            // 尝试使用 speech-to-text 输入类型
+            input.setAttribute('x-webkit-speech', '');
+            input.setAttribute('speech', '');
         }
 
+        input.addEventListener('input', () => {
+            if (input.value) {
+                handleUserInput(input.value);
+                input.value = '';
+                document.body.removeChild(input);
+            }
+        });
+
+        // 5秒后移除输入框
+        setTimeout(() => {
+            if (document.body.contains(input)) {
+                document.body.removeChild(input);
+            }
+        }, 5000);
+    }
+
+    // 语音按钮点击事件
+    voiceBtn.addEventListener('click', () => {
         if (!isRecording) {
             startRecording();
         } else {
@@ -309,7 +343,7 @@ function initCarousel() {
     const textInput = document.querySelector('.text-input');
     const chatMessages = document.getElementById('chatMessages');
 
-    // 添加自动回复的示例回复列表
+    // 添加自动回复的例回复列表
     const autoReplies = [
         "好的，我明白了",
         "这是一个很好的问题",
@@ -366,7 +400,7 @@ function initCarousel() {
         if (welcomeSection && !welcomeSection.classList.contains('hidden')) {
             welcomeSection.classList.add('hidden');
             
-            // 重新计算聊���容器的高度
+            // 重新计算聊天容器的高度
             const chatContainer = document.querySelector('.chat-container');
             if (chatContainer) {
                 chatContainer.style.height = 'calc(100vh - 330px)';  // 调整高度
