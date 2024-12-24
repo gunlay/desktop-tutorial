@@ -27,6 +27,75 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(`点击了${text}选项`);
         });
     });
+
+    // 在初始化部分添加完成按钮引用
+    const finishBtn = document.querySelector('.finish-record-btn');
+
+    // 修改开始录音函数
+    async function startRecording() {
+        try {
+            if (!audioContext) initAudioContext();
+            
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+            
+            recognition.start();
+            isRecording = true;
+            waveContainer.classList.add('active');
+            voiceIcon.textContent = '⏺';
+            voiceText.textContent = '录音中';
+            voiceBtn.style.backgroundColor = '#ff3b30';
+            
+            updateWaveform();
+        } catch (err) {
+            console.error('录音启动失败:', err);
+            addMessage('录音启动失败，请重试。', 'bot');
+        }
+    }
+
+    // 添加完成按钮点击事件
+    finishBtn.addEventListener('click', () => {
+        if (isRecording) {
+            stopRecording();
+        }
+    });
+
+    // 修改语音按钮事件，移除长按逻辑
+    voiceBtn.addEventListener('click', () => {
+        if (!recognition) {
+            addMessage('您的浏览器不支持语音识别功能。', 'bot');
+            return;
+        }
+
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    // 移除原有的触摸相关事件
+    voiceBtn.removeEventListener('touchstart', null);
+    voiceBtn.removeEventListener('touchmove', null);
+    voiceBtn.removeEventListener('touchend', null);
+    voiceBtn.removeEventListener('touchcancel', null);
+
+    // 修改停止录音函数
+    function stopRecording() {
+        if (!isRecording) return;
+        
+        recognition.stop();
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+        waveContainer.classList.remove('active');
+        cancelTip.classList.remove('active');
+        isRecording = false;
+        voiceIcon.textContent = '🎤';
+        voiceText.textContent = '语音输入';
+        voiceBtn.style.backgroundColor = '#007aff';
+    }
 });
 
 // 轮播图功能
@@ -93,100 +162,6 @@ function initCarousel() {
 
         requestAnimationFrame(updateWaveform);
     }
-
-    // 开始录音
-    async function startRecording() {
-        try {
-            if (!audioContext) initAudioContext();
-            
-            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const source = audioContext.createMediaStreamSource(mediaStream);
-            source.connect(analyser);
-            
-            recognition.start();
-            isRecording = true;
-            waveContainer.classList.add('active');
-            voiceIcon.textContent = '⏺';
-            voiceText.textContent = '松开结束';
-            voiceBtn.style.backgroundColor = '#ff3b30';
-            
-            updateWaveform();
-        } catch (err) {
-            console.error('录音启动失败:', err);
-            addMessage('录音启动失败，请重试。', 'bot');
-        }
-    }
-
-    // 停止录音
-    function stopRecording() {
-        if (!isRecording) return;
-        
-        recognition.stop();
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => track.stop());
-        }
-        waveContainer.classList.remove('active');
-        cancelTip.classList.remove('active');
-        isRecording = false;
-        voiceIcon.textContent = '🎤';
-        voiceText.textContent = '语音输入';
-        voiceBtn.style.backgroundColor = '#007aff';
-    }
-
-    // 取消录音
-    function cancelRecording() {
-        recognition.abort();
-        stopRecording();
-        addMessage('已取消录音', 'bot');
-    }
-
-    // 长按开始事件
-    voiceBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        startY = e.touches[0].clientY;
-        longPressTimer = setTimeout(() => {
-            startRecording();
-        }, 500); // 500ms 长按触发
-    });
-
-    // 触摸移动事件
-    voiceBtn.addEventListener('touchmove', (e) => {
-        if (!isRecording) return;
-        
-        const moveY = e.touches[0].clientY;
-        const diff = startY - moveY;
-        
-        // 上滑超过50像素���示取消提示
-        if (diff > 50) {
-            cancelTip.classList.add('active');
-        } else {
-            cancelTip.classList.remove('active');
-        }
-    });
-
-    // 触摸结束事件
-    voiceBtn.addEventListener('touchend', (e) => {
-        clearTimeout(longPressTimer);
-        
-        if (!isRecording) return;
-        
-        const endY = e.changedTouches[0].clientY;
-        const diff = startY - endY;
-        
-        if (diff > 50) {
-            cancelRecording();
-        } else {
-            stopRecording();
-        }
-    });
-
-    // 触摸取消事件
-    voiceBtn.addEventListener('touchcancel', () => {
-        clearTimeout(longPressTimer);
-        if (isRecording) {
-            cancelRecording();
-        }
-    });
 
     // 检查浏览器是否支持语音识别
     if ('webkitSpeechRecognition' in window) {
