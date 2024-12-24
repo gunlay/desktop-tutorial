@@ -31,7 +31,85 @@ document.addEventListener('DOMContentLoaded', function() {
     // 在初始化部分添加完成按钮引用
     const finishBtn = document.querySelector('.finish-record-btn');
 
-    // 修改开始录音函数
+    // 语音输入初始化
+    const voiceBtn = document.querySelector('.voice-input-btn');
+    const voiceIcon = voiceBtn.querySelector('.icon');
+    const voiceText = voiceBtn.querySelector('span');
+    const waveContainer = document.querySelector('.voice-wave-container');
+    const wavesDiv = document.querySelector('.voice-waves');
+    const cancelTip = document.querySelector('.cancel-tip');
+    const textInput = document.querySelector('.text-input');
+    let recognition = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let analyser = null;
+    let isRecording = false;
+
+    // 创建波形条
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'voice-wave-bar';
+        wavesDiv.appendChild(bar);
+    }
+
+    // 初始化音频上下文
+    function initAudioContext() {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+    }
+
+    // 更新波形显示
+    function updateWaveform() {
+        if (!isRecording) return;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(dataArray);
+        const bars = wavesDiv.children;
+        
+        for (let i = 0; i < bars.length; i++) {
+            const value = dataArray[i] || 0;
+            const height = Math.max(3, value / 2);
+            bars[i].style.height = `${height}px`;
+        }
+
+        requestAnimationFrame(updateWaveform);
+    }
+
+    // 检查浏览器是否支持语音识别
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'zh-CN';
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            textInput.value = text;
+            
+            // 自动发送识别结果
+            const enterEvent = new KeyboardEvent('keypress', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true
+            });
+            textInput.dispatchEvent(enterEvent);
+        };
+
+        recognition.onend = () => {
+            stopRecording();
+        };
+
+        recognition.onerror = (event) => {
+            console.error('语音识别错误:', event.error);
+            stopRecording();
+            addMessage('语音识别失败，请重试。', 'bot');
+        };
+    }
+
+    // 开始录音
     async function startRecording() {
         try {
             if (!audioContext) initAudioContext();
@@ -54,34 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 添加完成按钮点击事件
-    finishBtn.addEventListener('click', () => {
-        if (isRecording) {
-            stopRecording();
-        }
-    });
-
-    // 修改语音按钮事件，移除长按逻辑
-    voiceBtn.addEventListener('click', () => {
-        if (!recognition) {
-            addMessage('您的浏览器不支持语音识别功能。', 'bot');
-            return;
-        }
-
-        if (!isRecording) {
-            startRecording();
-        } else {
-            stopRecording();
-        }
-    });
-
-    // 移除原有的触摸相关事件
-    voiceBtn.removeEventListener('touchstart', null);
-    voiceBtn.removeEventListener('touchmove', null);
-    voiceBtn.removeEventListener('touchend', null);
-    voiceBtn.removeEventListener('touchcancel', null);
-
-    // 修改停止录音函数
+    // 停止录音
     function stopRecording() {
         if (!isRecording) return;
         
@@ -96,6 +147,118 @@ document.addEventListener('DOMContentLoaded', function() {
         voiceText.textContent = '语音输入';
         voiceBtn.style.backgroundColor = '#007aff';
     }
+
+    // 语音按钮点击事件
+    voiceBtn.addEventListener('click', () => {
+        if (!recognition) {
+            addMessage('您的浏览器不支持语音识别功能。', 'bot');
+            return;
+        }
+
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    // 完成按钮点击事件
+    finishBtn.addEventListener('click', () => {
+        if (isRecording) {
+            stopRecording();
+        }
+    });
+
+    // 移除原有的触摸相关事件
+    voiceBtn.removeEventListener('touchstart', null);
+    voiceBtn.removeEventListener('touchmove', null);
+    voiceBtn.removeEventListener('touchend', null);
+    voiceBtn.removeEventListener('touchcancel', null);
+
+    // 添加文本输入处理
+    const chatMessages = document.getElementById('chatMessages');
+
+    // 添加自动回复的示例回复列表
+    const autoReplies = [
+        "好的，我明白了",
+        "这是一个很好的问题",
+        "让我想想怎么回答",
+        "需要我为您详细解释吗？",
+        "我来帮您解决这个问题"
+    ];
+
+    textInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter' && textInput.value.trim()) {
+            const userMessage = textInput.value.trim();
+            
+            // 添加用户消息
+            addMessage(userMessage, 'user');
+            
+            // 清空输入框
+            textInput.value = '';
+            
+            try {
+                // 使用相对路径
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: userMessage
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('API Error:', errorData);
+                    throw new Error(errorData.error || '网络请求失败');
+                }
+                
+                const data = await response.json();
+                
+                // 添加AI回复消息
+                addMessage(data.reply, 'bot');
+                
+            } catch (error) {
+                console.error('Error details:', error);
+                addMessage(`错误信息: ${error.message}`, 'bot');
+            }
+        }
+    });
+
+    function addMessage(text, type) {
+        // 获取欢迎文案区域
+        const welcomeSection = document.querySelector('.content-section');
+        
+        // 如果欢迎文案还在显示，则隐藏它
+        if (welcomeSection && !welcomeSection.classList.contains('hidden')) {
+            welcomeSection.classList.add('hidden');
+            
+            // 重新计算聊天容器的高度
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                chatContainer.style.height = 'calc(100vh - 330px)';  // 调整高度
+            }
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = text;
+        chatMessages.appendChild(messageDiv);
+        
+        // 滚动到最新消息
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // 在 initCarousel 函数中添加塔罗牌按钮事件处理
+    const tarotBtn = document.querySelector('.tarot-btn');
+    tarotBtn.addEventListener('click', () => {
+        // 替换为你 Coze 应用链接
+        const cozeAppUrl = 'https://www.coze.cn/space/7382101453072302143/ui-builder-preview/7451807835614199827/mobile/home';  // 替换 YOUR_BOT_ID
+        // 在新窗口打开 Coze 应用
+        window.open(cozeAppUrl, '_blank');
+    });
 });
 
 // 轮播图功能
