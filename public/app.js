@@ -156,7 +156,7 @@ function initCarousel() {
         const moveY = e.touches[0].clientY;
         const diff = startY - moveY;
         
-        // 上滑超过50像素显示取消提示
+        // 上滑超过50像素���示取消提示
         if (diff > 50) {
             cancelTip.classList.add('active');
         } else {
@@ -284,10 +284,18 @@ function initCarousel() {
     });
 
     function addMessage(text, type) {
-        // 当添加第一条消息时，隐藏欢迎文案
+        // 获取欢迎文案区域
         const welcomeSection = document.querySelector('.content-section');
-        if (welcomeSection && welcomeSection.style.display !== 'none') {
-            welcomeSection.style.display = 'none';
+        
+        // 如果欢迎文案还在显示，则隐藏它
+        if (welcomeSection && !welcomeSection.classList.contains('hidden')) {
+            welcomeSection.classList.add('hidden');
+            
+            // 重新计算聊天容器的高度
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                chatContainer.style.height = 'calc(100vh - 330px)';  // 调整高度
+            }
         }
 
         const messageDiv = document.createElement('div');
@@ -302,7 +310,7 @@ function initCarousel() {
     // 在 initCarousel 函数中添加塔罗牌按钮事件处理
     const tarotBtn = document.querySelector('.tarot-btn');
     tarotBtn.addEventListener('click', () => {
-        // 替换为你��� Coze 应用链接
+        // 替换为你 Coze 应用链接
         const cozeAppUrl = 'https://www.coze.cn/space/7382101453072302143/ui-builder-preview/7451807835614199827/mobile/home';  // 替换 YOUR_BOT_ID
         // 在新窗口打开 Coze 应用
         window.open(cozeAppUrl, '_blank');
@@ -368,7 +376,7 @@ function initCalendar() {
     }
 
     function showDayDetail(day) {
-        alert(`查看 ${currentYear}年${currentMonth + 1}月${day}日 的详细记���`);
+        alert(`查看 ${currentYear}年${currentMonth + 1}月${day}日 的详细记录`);
         // 这里可以实现查看详情的具体逻辑
     }
 

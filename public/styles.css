@@ -102,8 +102,16 @@ body {
 
 /* 文案部分样式 */
 .content-section {
-    padding: 20px;
+    padding: 15px 20px;
     background-color: #fff;
+    margin-bottom: 15px;
+    display: block;
+    transition: all 0.3s ease;
+}
+
+.content-section.hidden {
+    display: none;
+    margin-bottom: 0;
 }
 
 .content-section h2 {
@@ -173,7 +181,7 @@ body {
     transform: scale(0.95);
 }
 
-/* 在语音输入按钮样式后添加塔罗牌按钮样式 */
+/* 在语音输入按钮样式后添加塔罗牌按���样式 */
 .tarot-btn {
     padding: 8px 12px;
     border-radius: 22px;
@@ -560,8 +568,10 @@ body {
 .chat-container {
     padding: 15px;
     margin-bottom: 130px;
+    min-height: 200px;
     height: calc(100vh - 380px);
     overflow-y: auto;
+    flex-grow: 1;
 }
 
 .chat-messages {
