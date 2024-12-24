@@ -52,8 +52,16 @@ function initVoiceInput() {
     
     let recognition = null;
     let isRecording = false;
+    let temporaryTranscript = '';
 
-    // 检查是否支持原生语音识别
+    // 创建波形条
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'voice-wave-bar';
+        wavesDiv.appendChild(bar);
+    }
+
+    // 检查是否支持语音识别
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
         recognition.continuous = true;
@@ -68,28 +76,44 @@ function initVoiceInput() {
 
     // 如果支持语音识别，设置事件处理
     if (recognition) {
+        // 处理语音识别结果
         recognition.onresult = (event) => {
             const result = event.results[event.results.length - 1];
+            temporaryTranscript = result[0].transcript;
+            
+            // 如果是最终结果
             if (result.isFinal) {
-                const text = result[0].transcript;
-                handleUserInput(text);
-                stopRecording();
+                // 不要立即停止，让用户手动停止
+                console.log('识别结果:', temporaryTranscript);
             }
         };
 
+        // 处理语音识别结束
         recognition.onend = () => {
+            // 如果还在录音状态，自动重新开始
             if (isRecording) {
-                startRecording();
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error('重新启动语音识别失败:', e);
+                }
             }
         };
 
+        // 处理语音识别错误
         recognition.onerror = (event) => {
             console.error('语音识别错误:', event.error);
             if (event.error === 'no-speech') {
+                // 没有检测到语音时，如果还在录音状态就继续
                 if (isRecording) {
-                    startRecording();
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.error('重新启动语音识别失败:', e);
+                    }
                 }
             } else {
+                // 其他错误就停止录音
                 stopRecording();
                 addMessage('语音识别失败，请重试。', 'bot');
             }
@@ -108,12 +132,20 @@ function initVoiceInput() {
                 throw new Error('设备不支持语音识别');
             }
 
+            temporaryTranscript = '';
             recognition.start();
             isRecording = true;
             waveContainer.classList.add('active');
             voiceIcon.textContent = '⏺';
             voiceText.textContent = '录音中';
             voiceBtn.style.backgroundColor = '#ff3b30';
+
+            // 添加动画效果到波形条
+            const bars = wavesDiv.children;
+            Array.from(bars).forEach((bar, index) => {
+                bar.style.animation = `waveAnimation ${0.5 + index * 0.1}s ease-in-out infinite`;
+            });
+
         } catch (err) {
             console.error('录音启动失败:', err);
             addMessage('录音启动失败，请重试。', 'bot');
@@ -129,11 +161,24 @@ function initVoiceInput() {
         if (recognition) {
             recognition.stop();
         }
+
+        // 如果有临时识别结果，发送它
+        if (temporaryTranscript) {
+            handleUserInput(temporaryTranscript);
+            temporaryTranscript = '';
+        }
+
         waveContainer.classList.remove('active');
         cancelTip.classList.remove('active');
         voiceIcon.textContent = '🎤';
         voiceText.textContent = '语音输入';
         voiceBtn.style.backgroundColor = '#007aff';
+
+        // 停止波形动画
+        const bars = wavesDiv.children;
+        Array.from(bars).forEach(bar => {
+            bar.style.animation = 'none';
+        });
     }
 
     // 检查是否为移动设备
@@ -519,7 +564,7 @@ function addVoiceMessage(audioUrl, size) {
     // 计算语音时长（这里简单估算，实际项目中需要获取真实时长）
     const duration = Math.round(size / 1000); // 简单估算，实际需要根据实际音频时长计算
     
-    // 创建语音波形动画
+    // 创建���音波形动画
     const waveDiv = document.createElement('div');
     waveDiv.className = 'voice-wave';
     for (let i = 0; i < 4; i++) {
