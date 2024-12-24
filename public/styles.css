@@ -170,6 +170,27 @@ body {
     transform: scale(0.95);
 }
 
+/* 在语音输入按钮样式后添加塔罗牌按钮样式 */
+.tarot-btn {
+    padding: 12px 24px;
+    border-radius: 24px;
+    background-color: #9b59b6;  /* 紫色调 */
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+    transition: transform 0.2s;
+    height: 44px;
+    white-space: nowrap;
+}
+
+.tarot-btn:active {
+    transform: scale(0.95);
+}
+
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
     .text-input {
@@ -568,7 +589,7 @@ body {
     border-bottom-left-radius: 4px;
 }
 
-/* 深���模式适配 */
+/* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
     .message.bot {
         background-color: #2c2c2e;

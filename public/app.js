@@ -175,6 +175,15 @@ function initCarousel() {
         // 滚动到最新消息
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
+    // 在 initCarousel 函数中添加塔罗牌按钮事件处理
+    const tarotBtn = document.querySelector('.tarot-btn');
+    tarotBtn.addEventListener('click', () => {
+        // 替换为你的 Coze 应用链接
+        const cozeAppUrl = 'https://www.coze.cn/space/7382101453072302143/ui-builder-preview/7451807835614199827/mobile/home';  // 替换 YOUR_BOT_ID
+        // 在新窗口打开 Coze 应用
+        window.open(cozeAppUrl, '_blank');
+    });
 }
 
 // 日历功能
