@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化语音输入
     initVoiceInput();
     
-    // 初始化轮播图
+    // 初始化轮播图（移除语音相关代码）
     initCarousel();
     
     // 初始化日历
@@ -48,201 +48,131 @@ function initVoiceInput() {
     const wavesDiv = document.querySelector('.voice-waves');
     const cancelTip = document.querySelector('.cancel-tip');
     const finishBtn = document.querySelector('.finish-record-btn');
-    const textInput = document.querySelector('.text-input');
     
     let recognition = null;
     let isRecording = false;
-    let temporaryTranscript = '';
 
     // 创建波形条
+    wavesDiv.innerHTML = ''; // 清除现有的波形条
     for (let i = 0; i < 20; i++) {
         const bar = document.createElement('div');
         bar.className = 'voice-wave-bar';
         wavesDiv.appendChild(bar);
     }
 
-    // 检查是否支持语音识别
+    // 检查浏览器支持
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'zh-CN';
     } else if ('SpeechRecognition' in window) {
         recognition = new SpeechRecognition();
+    }
+
+    if (recognition) {
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'zh-CN';
-    }
 
-    // 如果支持语音识别，设置事件处理
-    if (recognition) {
-        // 处理语音识别结果
+        recognition.onstart = () => {
+            console.log('语音识别已启动');
+            isRecording = true;
+            updateUI(true);
+        };
+
         recognition.onresult = (event) => {
             const result = event.results[event.results.length - 1];
-            temporaryTranscript = result[0].transcript;
-            
-            // 如果是最终结果
             if (result.isFinal) {
-                // 不要立即停止，让用户手动停止
-                console.log('识别结果:', temporaryTranscript);
+                const text = result[0].transcript;
+                console.log('识别结果:', text);
+                if (text.trim()) {
+                    handleUserInput(text.trim());
+                }
             }
         };
 
-        // 处理语音识别结束
         recognition.onend = () => {
-            // 如果还在录音状态，自动重新开始
+            console.log('语音识别结束');
             if (isRecording) {
                 try {
                     recognition.start();
                 } catch (e) {
-                    console.error('重新启动语音识别失败:', e);
+                    console.error('重新启动失败:', e);
+                    updateUI(false);
                 }
             }
         };
 
-        // 处理语音识别错误
         recognition.onerror = (event) => {
             console.error('语音识别错误:', event.error);
             if (event.error === 'no-speech') {
-                // 没有检测到语音时，如果还在录音状态就继续
+                // 继续录音
                 if (isRecording) {
                     try {
                         recognition.start();
                     } catch (e) {
-                        console.error('重新启动语音识别失败:', e);
+                        console.error('重新启动失败:', e);
+                        updateUI(false);
                     }
                 }
             } else {
-                // 其他错误就停止录音
-                stopRecording();
+                updateUI(false);
                 addMessage('语音识别失败，请重试。', 'bot');
             }
         };
     }
 
-    // 开始录音
-    async function startRecording() {
-        try {
-            if (!recognition) {
-                // 如果不支持 Web Speech API，尝试调用系统语音输入
-                if (isMobile()) {
-                    startMobileVoiceInput();
-                    return;
-                }
-                throw new Error('设备不支持语音识别');
-            }
-
-            temporaryTranscript = '';
-            recognition.start();
-            isRecording = true;
+    function updateUI(recording) {
+        if (recording) {
             waveContainer.classList.add('active');
             voiceIcon.textContent = '⏺';
             voiceText.textContent = '录音中';
             voiceBtn.style.backgroundColor = '#ff3b30';
-
-            // 添加动画效果到波形条
+            
+            // 添加波形动画
             const bars = wavesDiv.children;
             Array.from(bars).forEach((bar, index) => {
                 bar.style.animation = `waveAnimation ${0.5 + index * 0.1}s ease-in-out infinite`;
             });
-
-        } catch (err) {
-            console.error('录音启动失败:', err);
-            addMessage('录音启动失败，请重试。', 'bot');
-            stopRecording();
-        }
-    }
-
-    // 停止录音
-    function stopRecording() {
-        if (!isRecording) return;
-        
-        isRecording = false;
-        if (recognition) {
-            recognition.stop();
-        }
-
-        // 如果有临时识别结果，发送它
-        if (temporaryTranscript) {
-            handleUserInput(temporaryTranscript);
-            temporaryTranscript = '';
-        }
-
-        waveContainer.classList.remove('active');
-        cancelTip.classList.remove('active');
-        voiceIcon.textContent = '🎤';
-        voiceText.textContent = '语音输入';
-        voiceBtn.style.backgroundColor = '#007aff';
-
-        // 停止波形动画
-        const bars = wavesDiv.children;
-        Array.from(bars).forEach(bar => {
-            bar.style.animation = 'none';
-        });
-    }
-
-    // 检查是否为移动设备
-    function isMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    // 启动移动设备原生语音输入
-    function startMobileVoiceInput() {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.style.position = 'absolute';
-        input.style.opacity = '0';
-        input.style.height = '1px';
-        input.style.width = '1px';
-        input.style.top = '-100px';
-        document.body.appendChild(input);
-
-        input.focus();
-        
-        // 触发移动设备的语音输入
-        if (typeof window.webkit !== 'undefined' && 
-            window.webkit.messageHandlers && 
-            window.webkit.messageHandlers.keyboard) {
-            // iOS 设备
-            window.webkit.messageHandlers.keyboard.postMessage('showVoice');
-        } else if (window.chrome && window.chrome.webview) {
-            // Android 设备
-            window.chrome.webview.postMessage('showVoice');
         } else {
-            // 尝试使用 speech-to-text 输入类型
-            input.setAttribute('x-webkit-speech', '');
-            input.setAttribute('speech', '');
+            isRecording = false;
+            waveContainer.classList.remove('active');
+            voiceIcon.textContent = '🎤';
+            voiceText.textContent = '语音输入';
+            voiceBtn.style.backgroundColor = '#007aff';
+            
+            // 停止波形动画
+            const bars = wavesDiv.children;
+            Array.from(bars).forEach(bar => {
+                bar.style.animation = 'none';
+            });
         }
-
-        input.addEventListener('input', () => {
-            if (input.value) {
-                handleUserInput(input.value);
-                input.value = '';
-                document.body.removeChild(input);
-            }
-        });
-
-        // 5秒后移除输入框
-        setTimeout(() => {
-            if (document.body.contains(input)) {
-                document.body.removeChild(input);
-            }
-        }, 5000);
     }
 
     // 语音按钮点击事件
     voiceBtn.addEventListener('click', () => {
+        if (!recognition) {
+            addMessage('您的浏览器不支持语音识别功能。', 'bot');
+            return;
+        }
+
         if (!isRecording) {
-            startRecording();
+            try {
+                recognition.start();
+            } catch (err) {
+                console.error('启动失败:', err);
+                updateUI(false);
+                addMessage('启动语音识别失败，请重试。', 'bot');
+            }
         } else {
-            stopRecording();
+            recognition.stop();
+            updateUI(false);
         }
     });
 
     // 完成按钮点击事件
     finishBtn.addEventListener('click', () => {
         if (isRecording) {
-            stopRecording();
+            recognition.stop();
+            updateUI(false);
         }
     });
 }
@@ -290,7 +220,7 @@ function initCarousel() {
         });
     }
 
-    // 自动轮播
+    // 自动���播
     setInterval(() => {
         currentSlide = (currentSlide + 1) % 3;
         updateCarousel();
@@ -564,7 +494,7 @@ function addVoiceMessage(audioUrl, size) {
     // 计算语音时长（这里简单估算，实际项目中需要获取真实时长）
     const duration = Math.round(size / 1000); // 简单估算，实际需要根据实际音频时长计算
     
-    // 创建���音波形动画
+    // 创建音波形动画
     const waveDiv = document.createElement('div');
     waveDiv.className = 'voice-wave';
     for (let i = 0; i < 4; i++) {
